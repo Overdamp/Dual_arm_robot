@@ -1,0 +1,299 @@
+using System;
+using System.Net;
+using System.Net.Sockets;
+using System.Net.NetworkInformation;
+using System.Text;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+// สคริปต์สำหรับส่งข้อมูลคอนโทรลเลอร์ VR (มือขวาและมือซ้าย) ผ่าน TCP ไปยังไคลเอนต์
+public class VRControllerSender : MonoBehaviour
+{
+    // กำหนดพอร์ตสำหรับเซิร์ฟเวอร์ TCP (ค่าเริ่มต้น 5555)
+    [SerializeField] private int port = 5555;
+    // อัตราการส่งข้อมูลต่อวินาที (ค่าเริ่มต้น 100 Hz)
+    [SerializeField] private int publishFrameRate = 100;
+    // เก็บเวลาที่อัปเดตล่าสุดเพื่อควบคุมอัตราการส่ง
+    private float lastUpdateTime = 0f;
+    // ช่วงเวลาระหว่างการอัปเดต (คำนวณจาก publishFrameRate)
+    private float targetInterval = 0f;
+
+    // คอนโทรลเลอร์มือขวา
+    [SerializeField] private GameObject rightController; // GameObject ของคอนโทรลเลอร์มือขวา
+    [SerializeField] private InputActionProperty rightTrackingButton; // Input Action สำหรับปุ่ม tracking (เช่น trigger) มือขวา
+    [SerializeField] private InputActionProperty rightGripperButton; // Input Action สำหรับปุ่ม gripper (เช่น grip) มือขวา
+    private bool rightTrackingButtonTriggered = false; // ตัวแปรเก็บสถานะการกดปุ่ม tracking มือขวา
+    private bool rightGripperButtonTriggered = false; // ตัวแปรเก็บสถานะการกดปุ่ม gripper มือขวา
+
+    // คอนโทรลเลอร์มือซ้าย
+    [SerializeField] private GameObject leftController; // GameObject ของคอนโทรลเลอร์มือซ้าย
+    [SerializeField] private InputActionProperty leftTrackingButton; // Input Action สำหรับปุ่ม tracking (เช่น trigger) มือซ้าย
+    [SerializeField] private InputActionProperty leftGripperButton; // Input Action สำหรับปุ่ม gripper (เช่น grip) มือซ้าย
+    private bool leftTrackingButtonTriggered = false; // ตัวแปรเก็บสถานะการกดปุ่ม tracking มือซ้าย
+    private bool leftGripperButtonTriggered = false; // ตัวแปรเก็บสถานะการกดปุ่ม gripper มือซ้าย
+
+    // ตัวแปรสำหรับจัดการการเชื่อมต่อ TCP
+    private TcpListener server; // เซิร์ฟเวอร์ TCP สำหรับรับการเชื่อมต่อจากไคลเอนต์
+    private TcpClient client; // ไคลเอนต์ที่เชื่อมต่อกับเซิร์ฟเวอร์
+    private NetworkStream stream; // สตรีมสำหรับส่งข้อมูลไปยังไคลเอนต์
+
+    // ตัวแปรตรวจสอบว่ากำลังรอการเชื่อมต่อจากไคลเอนต์หรือไม่
+    private bool isAwaitingConnection = false;
+
+    // เริ่มต้นสคริปต์เมื่อ GameObject ถูกโหลด
+    void Start()
+    {
+        // เริ่มเซิร์ฟเวอร์ TCP เพื่อรับการเชื่อมต่อ
+        StartServer();
+        // คำนวณช่วงเวลาการอัปเดตจากอัตราการส่งข้อมูล (เช่น 1/100 วินาที = 0.01 วินาที)
+        targetInterval = 1f / publishFrameRate;
+    }
+
+    // ฟังก์ชันสำหรับค้นหา IP address ของเครื่องโดยอัตโนมัติ
+    private string GetLocalIPAddress()
+    {
+        try
+        {
+            // ดึงข้อมูลอินเทอร์เฟซเครือข่ายทั้งหมด (เช่น Wi-Fi, Ethernet)
+            // กรองเฉพาะอินเทอร์เฟซที่ใช้งานได้และไม่ใช่ loopback (127.0.0.1)
+            var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces()
+                .Where(ni => ni.OperationalStatus == OperationalStatus.Up && ni.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                // ดึง IP address ทั้งหมดจากอินเทอร์เฟซ
+                .SelectMany(ni => ni.GetIPProperties().UnicastAddresses)
+                // กรองเฉพาะ IP แบบ IPv4 (ไม่รวม IPv6)
+                .Where(addr => addr.Address.AddressFamily == AddressFamily.InterNetwork)
+                // แปลง IP เป็นสตริง
+                .Select(addr => addr.Address.ToString());
+
+            // เลือก IP ตัวแรกที่เจอ
+            string ipAddress = networkInterfaces.FirstOrDefault();
+            if (string.IsNullOrEmpty(ipAddress))
+            {
+                // ถ้าไม่เจอ IP ที่ถูกต้อง ให้ใช้ loopback (127.0.0.1) และบันทึกข้อผิดพลาด
+                Debug.LogError("No valid IPv4 address found. Falling back to loopback.");
+                return "127.0.0.1";
+            }
+
+            // แสดง IP ที่เลือกใน Unity Console เพื่อใช้ในการเชื่อมต่อ
+            Debug.Log($"Found IP address: {ipAddress}");
+            return ipAddress;
+        }
+        catch (Exception e)
+        {
+            // ถ้ามีข้อผิดพลาด (เช่น ไม่สามารถเข้าถึงเครือข่าย) ให้ใช้ loopback และบันทึกข้อผิดพลาด
+            Debug.LogError($"Error retrieving IP address: {e.Message}");
+            return "127.0.0.1";
+        }
+    }
+
+    // ฟังก์ชันสำหรับเริ่มเซิร์ฟเวอร์ TCP
+    void StartServer()
+    {
+        try
+        {
+            // ค้นหา IP address ของเครื่องโดยอัตโนมัติ
+            string ipAddress = GetLocalIPAddress();
+            // แปลงสตริง IP เป็นออบเจ็กต์ IPAddress
+            IPAddress ip = IPAddress.Parse(ipAddress);
+            // สร้างเซิร์ฟเวอร์ TCP ด้วย IP และพอร์ตที่กำหนด
+            server = new TcpListener(ip, port);
+            // เริ่มเซิร์ฟเวอร์เพื่อรับการเชื่อมต่อ
+            server.Start();
+            // แสดงสถานะใน Unity Console
+            Debug.Log($"Server started at {ipAddress}:{port}");
+            // รอการเชื่อมต่อจากไคลเอนต์
+            WaitForClientConnection();
+        }
+        catch (Exception e)
+        {
+            // บันทึกข้อผิดพลาดถ้าเซิร์ฟเวอร์เริ่มไม่ได้ (เช่น พอร์ตถูกใช้งาน)
+            Debug.LogError($"Server failed to start: {e.Message}");
+        }
+    }
+
+    // ฟังก์ชันสำหรับรอการเชื่อมต่อจากไคลเอนต์
+    void WaitForClientConnection()
+    {
+        // ถ้ากำลังรอการเชื่อมต่ออยู่แล้ว ให้ข้ามเพื่อป้องกันการเรียกซ้ำ
+        if (isAwaitingConnection) return;
+
+        // แสดงสถานะใน Unity Console
+        Debug.Log("Waiting for connection...");
+        // ตั้งค่าสถานะว่ารอการเชื่อมต่อ
+        isAwaitingConnection = true;
+
+        // เริ่มรอการเชื่อมต่อแบบ asynchronous โดยเรียก OnClientConnected เมื่อมีไคลเอนต์เชื่อมต่อ
+        server.BeginAcceptTcpClient(OnClientConnected, null);
+    }
+
+    // ฟังก์ชันที่เรียกเมื่อไคลเอนต์เชื่อมต่อสำเร็จ
+    private void OnClientConnected(IAsyncResult ar)
+    {
+        // รีเซ็ตสถานะการรอการเชื่อมต่อ
+        isAwaitingConnection = false;
+
+        try
+        {
+            // ดึงข้อมูลไคลเอนต์ที่เชื่อมต่อ
+            client = server.EndAcceptTcpClient(ar);
+            // สร้างสตรีมสำหรับส่งข้อมูลไปยังไคลเอนต์
+            stream = client.GetStream();
+            // แสดงสถานะใน Unity Console
+            Debug.Log("Client connected!");
+        }
+        catch (ObjectDisposedException)
+        {
+            // ถ้าเซิร์ฟเวอร์ถูกปิด (เช่น สคริปต์ถูกปิด) ให้บันทึกคำเตือนและข้าม
+            Debug.LogWarning("Server has been stopped. Ignoring client connection.");
+        }
+        catch (Exception e)
+        {
+            // บันทึกข้อผิดพลาดและรอการเชื่อมต่อใหม่ถ้ามีปัญหา
+            Debug.LogError($"Error accepting client connection: {e.Message}");
+            WaitForClientConnection();
+        }
+    }
+
+    // ฟังก์ชันที่เรียกเมื่อสคริปต์ถูกเปิดใช้งาน
+    void OnEnable()
+    {
+        // ผูกเหตุการณ์สำหรับปุ่มของคอนโทรลเลอร์มือขวา
+        // ตรวจสอบว่า Input Action ไม่เป็น null เพื่อป้องกันข้อผิดพลาด
+        if (rightTrackingButton.action != null)
+            rightTrackingButton.action.performed += ctx => rightTrackingButtonTriggered = true;
+        if (rightGripperButton.action != null)
+            rightGripperButton.action.performed += ctx => rightGripperButtonTriggered = true;
+
+        // ผูกเหตุการณ์สำหรับปุ่มของคอนโทรลเลอร์มือซ้าย
+        if (leftTrackingButton.action != null)
+            leftTrackingButton.action.performed += ctx => leftTrackingButtonTriggered = true;
+        if (leftGripperButton.action != null)
+            leftGripperButton.action.performed += ctx => leftGripperButtonTriggered = true;
+    }
+
+    // ฟังก์ชันที่เรียกเมื่อสคริปต์ถูกปิดใช้งาน
+    void OnDisable()
+    {
+        // ยกเลิกการผูกเหตุการณ์สำหรับปุ่มของคอนโทรลเลอร์มือขวา
+        if (rightTrackingButton.action != null)
+            rightTrackingButton.action.performed -= ctx => rightTrackingButtonTriggered = true;
+        if (rightGripperButton.action != null)
+            rightGripperButton.action.performed -= ctx => rightGripperButtonTriggered = true;
+
+        // ยกเลิกการผูกเหตุการณ์สำหรับปุ่มของคอนโทรลเลอร์มือซ้าย
+        if (leftTrackingButton.action != null)
+            leftTrackingButton.action.performed -= ctx => leftTrackingButtonTriggered = true;
+        if (leftGripperButton.action != null)
+            leftGripperButton.action.performed -= ctx => leftGripperButtonTriggered = true;
+
+        // ปิดการเชื่อมต่อ TCP เพื่อปล่อยทรัพยากร
+        stream?.Close();
+        client?.Close();
+        server?.Stop();
+    }
+
+    // ฟังก์ชันที่เรียกทุกเฟรมเพื่ออัปเดตและส่งข้อมูลคอนโทรลเลอร์
+    void Update()
+    {
+        // ตรวจสอบว่าไคลเอนต์เชื่อมต่ออยู่หรือไม่
+        if (client == null || !client.Connected)
+        {
+            // ถ้ามีไคลเอนต์แต่ไม่เชื่อมต่อ ให้ปิดการเชื่อมต่อ
+            if (client != null)
+            {
+                client.Close();
+                stream = null;
+            }
+            // รอการเชื่อมต่อใหม่
+            WaitForClientConnection();
+            return;
+        }
+
+        // อัปเดตข้อมูลเฉพาะเมื่อถึงช่วงเวลาที่กำหนด (ตาม publishFrameRate)
+        if (Time.time - lastUpdateTime < targetInterval)
+            return;
+        lastUpdateTime = Time.time;
+
+        // ข้อมูลคอนโทรลเลอร์มือขวา
+        Vector3 rightPosition = Vector3.zero; // ค่าเริ่มต้นสำหรับตำแหน่งถ้าไม่มีคอนโทรลเลอร์
+        Quaternion rightRotation = Quaternion.identity; // ค่าเริ่มต้นสำหรับการหมุน
+        bool rightButton1 = false; // สถานะปุ่ม tracking มือขวา
+        bool rightButton2 = false; // สถานะปุ่ม gripper มือขวา
+
+        if (rightController != null)
+        {
+            // ดึงตำแหน่งและการหมุนจาก GameObject ของคอนโทรลเลอร์มือขวา
+            rightPosition = rightController.transform.position;
+            rightRotation = rightController.transform.rotation;
+            // แปลงพิกัดให้เหมาะสมกับระบบเป้าหมาย (เช่น สลับแกนเพื่อให้เข้ากับระบบพิกัดอื่น)
+            rightPosition = new Vector3(rightPosition.z, -rightPosition.x, rightPosition.y);
+            rightRotation = new Quaternion(rightRotation.z, -rightRotation.x, rightRotation.y, -rightRotation.w);
+            // ตรวจสอบสถานะปุ่ม (กดอยู่หรือไม่)
+            rightButton1 = rightTrackingButton.action != null && rightTrackingButton.action.IsPressed();
+            rightButton2 = rightGripperButton.action != null && rightGripperButton.action.IsPressed();
+        }
+        else
+        {
+            // บันทึกคำเตือนถ้าคอนโทรลเลอร์มือขวาไม่ถูกกำหนดใน Inspector
+            Debug.LogWarning("Right controller is not assigned.");
+        }
+
+        // ข้อมูลคอนโทรลเลอร์มือซ้าย
+        Vector3 leftPosition = Vector3.zero; // ค่าเริ่มต้นสำหรับตำแหน่งถ้าไม่มีคอนโทรลเลอร์
+        Quaternion leftRotation = Quaternion.identity; // ค่าเริ่มต้นสำหรับการหมุน
+        bool leftButton1 = false; // สถานะปุ่ม tracking มือซ้าย
+        bool leftButton2 = false; // สถานะปุ่ม gripper มือซ้าย
+
+        if (leftController != null)
+        {
+            // ดึงตำแหน่งและการหมุนจาก GameObject ของคอนโทรลเลอร์มือซ้าย
+            leftPosition = leftController.transform.position;
+            leftRotation = leftController.transform.rotation;
+            // แปลงพิกัดให้เหมาะสมกับระบบเป้าหมาย (เช่น สลับแกนเพื่อให้เข้ากับระบบพิกัดอื่น)
+            leftPosition = new Vector3(leftPosition.z, -leftPosition.x, leftPosition.y);
+            leftRotation = new Quaternion(leftRotation.z, -leftRotation.x, leftRotation.y, -leftRotation.w);
+            // ตรวจสอบสถานะปุ่ม (กดอยู่หรือไม่)
+            leftButton1 = leftTrackingButton.action != null && leftTrackingButton.action.IsPressed();
+            leftButton2 = leftGripperButton.action != null && leftGripperButton.action.IsPressed();
+        }
+        else
+        {
+            // บันทึกคำเตือนถ้าคอนโทรลเลอร์มือซ้ายไม่ถูกกำหนดใน Inspector
+            Debug.LogWarning("Left controller is not assigned.");
+        }
+
+        // จัดรูปแบบข้อมูลเป็นสตริงสำหรับส่งผ่าน TCP
+        // รูปแบบ: right_x,right_y,right_z,right_rx,right_ry,right_rz,right_rw,right_btn1,right_btn2,left_x,left_y,left_z,left_rx,left_ry,left_rz,left_rw,left_btn1,left_btn2
+        // รวม 18 ค่า (9 สำหรับมือขวา + 9 สำหรับมือซ้าย)
+        string FormatFloat(float value) => value.ToString("F3"); // แปลงตัวเลขเป็นทศนิยม 3 ตำแหน่งเพื่อความแม่นยำ
+        string data = $"{FormatFloat(rightPosition.x)},{FormatFloat(rightPosition.y)},{FormatFloat(rightPosition.z)}," +
+                      $"{FormatFloat(rightRotation.x)},{FormatFloat(rightRotation.y)},{FormatFloat(rightRotation.z)},{FormatFloat(rightRotation.w)}," +
+                      $"{(rightButton1 ? 1 : 0)},{(rightButton2 ? 1 : 0)}," +
+                      $"{FormatFloat(leftPosition.x)},{FormatFloat(leftPosition.y)},{FormatFloat(leftPosition.z)}," +
+                      $"{FormatFloat(leftRotation.x)},{FormatFloat(leftRotation.y)},{FormatFloat(leftRotation.z)},{FormatFloat(leftRotation.w)}," +
+                      $"{(leftButton1 ? 1 : 0)},{(leftButton2 ? 1 : 0)}\n";
+
+        try
+        {
+            // แปลงสตริงข้อมูลเป็นไบต์และส่งไปยังไคลเอนต์ผ่านสตรีม
+            byte[] message = Encoding.UTF8.GetBytes(data);
+            stream.Write(message, 0, message.Length);
+        }
+        catch (Exception e)
+        {
+            // บันทึกข้อผิดพลาดถ้าการส่งข้อมูลล้มเหลว (เช่น ไคลเอนต์ตัดการเชื่อมต่อ)
+            Debug.LogError($"Error writing to stream. Connection may be lost: {e.Message}");
+            // ปิดการเชื่อมต่อและรอไคลเอนต์ใหม่
+            client?.Close();
+            stream = null;
+            WaitForClientConnection();
+        }
+
+        // รีเซ็ตสถานะปุ่มทั้งหมดหลังจากส่งข้อมูล
+        rightTrackingButtonTriggered = false;
+        rightGripperButtonTriggered = false;
+        leftTrackingButtonTriggered = false;
+        leftGripperButtonTriggered = false;
+    }
+}
