@@ -1,9 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
-  <xacro:include filename="$(find dual_ur_robotiq_description)/urdf/ur.transmission.xacro" />
-  <xacro:include filename="$(find dual_ur_robotiq_description)/urdf/ur.gazebo.xacro" />
-
   <xacro:macro name="cylinder_inertial" params="radius length mass *origin">
     <inertial>
       <mass value="${mass}" />
@@ -101,7 +98,7 @@
     <link name="${prefix}base_link" >
       <visual>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/visual/base.dae" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/visual/base.dae" />
         </geometry>
         <material name="LightGrey">
           <color rgba="0.7 0.7 0.7 1.0"/>
@@ -109,7 +106,7 @@
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/collision/base.stl" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/collision/base.stl" />
         </geometry>
       </collision>
       <xacro:cylinder_inertial radius="0.06" length="0.05" mass="${base_mass}">
@@ -140,7 +137,7 @@
     <link name="${prefix}shoulder_link">
       <visual>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/visual/shoulder.dae" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/visual/shoulder.dae" />
         </geometry>
         <material name="LightGrey">
           <color rgba="0.7 0.7 0.7 1.0"/>
@@ -148,7 +145,7 @@
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/collision/shoulder.stl" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/collision/shoulder.stl" />
         </geometry>
       </collision>
       <xacro:cylinder_inertial radius="0.06" length="0.15" mass="${shoulder_mass}">
@@ -179,7 +176,7 @@
     <link name="${prefix}upper_arm_link">
       <visual>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/visual/upperarm.dae" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/visual/upperarm.dae" />
         </geometry>
         <material name="LightGrey">
           <color rgba="0.7 0.7 0.7 1.0"/>
@@ -187,7 +184,7 @@
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/collision/upperarm.stl" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/collision/upperarm.stl" />
         </geometry>
       </collision>
       <xacro:cylinder_inertial radius="0.06" length="${upper_arm_length}" mass="${upper_arm_mass}">
@@ -218,7 +215,7 @@
     <link name="${prefix}forearm_link">
       <visual>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/visual/forearm.dae" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/visual/forearm.dae" />
         </geometry>
         <material name="LightGrey">
           <color rgba="0.7 0.7 0.7 1.0"/>
@@ -226,7 +223,7 @@
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/collision/forearm.stl" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/collision/forearm.stl" />
         </geometry>
       </collision>
       <xacro:cylinder_inertial radius="0.06" length="${forearm_length}" mass="${forearm_mass}">
@@ -257,7 +254,7 @@
     <link name="${prefix}wrist_1_link">
       <visual>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/visual/wrist1.dae" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/visual/wrist1.dae" />
         </geometry>
         <material name="LightGrey">
           <color rgba="0.7 0.7 0.7 1.0"/>
@@ -265,7 +262,7 @@
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/collision/wrist1.stl" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/collision/wrist1.stl" />
         </geometry>
       </collision>
       <xacro:cylinder_inertial radius="0.06" length="0.12" mass="${wrist_1_mass}">
@@ -296,7 +293,7 @@
     <link name="${prefix}wrist_2_link">
       <visual>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/visual/wrist2.dae" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/visual/wrist2.dae" />
         </geometry>
         <material name="LightGrey">
           <color rgba="0.7 0.7 0.7 1.0"/>
@@ -304,7 +301,7 @@
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/collision/wrist2.stl" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/collision/wrist2.stl" />
         </geometry>
       </collision>
       <xacro:cylinder_inertial radius="0.06" length="0.12" mass="${wrist_2_mass}">
@@ -335,7 +332,7 @@
     <link name="${prefix}wrist_3_link">
       <visual>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/visual/wrist3.dae" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/visual/wrist3.dae" />
         </geometry>
         <material name="LightGrey">
           <color rgba="0.7 0.7 0.7 1.0"/>
@@ -343,7 +340,7 @@
       </visual>
       <collision>
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/collision/wrist3.stl" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/collision/wrist3.stl" />
         </geometry>
       </collision>
       <xacro:cylinder_inertial radius="0.0375" length="0.0458" mass="${wrist_3_mass}">
@@ -365,9 +362,6 @@
         <origin rpy="0 0 0" xyz="-0.01 0 0"/>
       </collision>
     </link>
-
-    <xacro:ur_arm_transmission prefix="${prefix}" />
-    <xacro:ur_arm_gazebo prefix="${prefix}" />
 
     <!-- ROS base_link to UR 'Base' Coordinates transform -->
     <link name="${prefix}base"/>
@@ -400,7 +394,7 @@
       <visual>
         <origin xyz="0.0 0.0 ${-1.0 * gripper_offset}" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/visual/basegripper.STL" scale="0.001 0.001 0.001" /> 
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/visual/basegripper.STL" scale="0.001 0.001 0.001" /> 
         </geometry>
         <material name="">
           <color rgba="0.79216 0.81961 0.93333 1" />
@@ -409,7 +403,7 @@
       <collision>
         <origin xyz="0.0 0.0 ${-1.0 * gripper_offset}" rpy="0 0 0" />
         <geometry>
-          <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/collision/basegripper.STL" scale="0.001 0.001 0.001" />
+          <mesh filename="package://dual_arm_robot_description/meshes/ur3e/collision/basegripper.STL" scale="0.001 0.001 0.001" />
         </geometry>
       </collision>
     </link>
@@ -430,7 +424,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/visual/finger_1.STL" scale="0.001 0.001 0.001" />
+        <mesh filename="package://dual_arm_robot_description/meshes/ur3e/visual/finger_1.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material
         name="">
@@ -441,7 +435,7 @@
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/collision/finger_1.STL" scale="0.001 0.001 0.001" />
+        <mesh filename="package://dual_arm_robot_description/meshes/ur3e/collision/finger_1.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -470,7 +464,7 @@
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/visual/finger_2.STL" scale="0.001 0.001 0.001" />
+        <mesh filename="package://dual_arm_robot_description/meshes/ur3e/visual/finger_2.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material
         name="">
@@ -481,7 +475,7 @@
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <mesh filename="package://dual_ur_robotiq_description/meshes/ur3e/collision/finger_2.STL" scale="0.001 0.001 0.001" />
+        <mesh filename="package://dual_arm_robot_description/meshes/ur3e/collision/finger_2.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>

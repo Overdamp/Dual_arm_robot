@@ -1,0 +1,25 @@
+moveit_setup_assistant_config:
+  urdf:
+    package: dual_arm_robot_description
+    relative_path: robot/dual_ur_robotiq.urdf.xacro
+  srdf:
+    relative_path: config/dual_ur_robotiq.srdf
+  package_settings:
+    author_name: Thanatchai
+    author_email: thanatchai.wong@kmutt.ac.th
+    generated_timestamp: 1746964515
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
+  modified_urdf:
+    xacros:
+      - control_xacro
+  control_xacro:
+    command:
+      - position
+    state:
+      - position
+      - velocity
