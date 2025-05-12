@@ -53,6 +53,17 @@ right_arm_controller:
 left_gripper_controller:
   ros__parameters:
     joint: left_joint_finger_1
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+      
 right_gripper_controller:
   ros__parameters:
     joint: right_joint_finger_1
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity

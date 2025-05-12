@@ -5,7 +5,7 @@
 
   <!-- ur5e -->
   <xacro:include filename="$(find dual_arm_robot_description)/robot/ur5e.urdf.xacro" />
-
+  <xacro:include filename="$(find dual_arm_robot_description)/robot/dual_gripper.ros2_control.xacro" />
 
   <link name="world"/>
 

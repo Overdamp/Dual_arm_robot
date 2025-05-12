@@ -1,0 +1,5 @@
+string arm  # "right" หรือ "left"
+bool state  # true = เปิด, false = ปิด
+---
+bool success
+string message
