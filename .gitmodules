@@ -6,3 +6,7 @@
 	path = My_submodule/dynamixel_hardware
 	url = https://github.com/Overdamp/dynamixel_hardware.git
 	branch = humble
+[submodule "My_submodule/UR_Description"]
+	path = My_submodule/UR_Description
+	url = https://github.com/Overdamp/Universal_Robots_ROS2_Description.git
+	branch = humble

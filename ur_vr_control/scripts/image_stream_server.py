@@ -12,7 +12,7 @@ class ImageStreamServer(Node):
         super().__init__('image_stream_server')
 
         # Parameters
-        self.declare_parameter('host', '0.0.0.0')  # Listen on all interfaces
+        self.declare_parameter('host', '192.168.')  # Listen on all interfaces
         self.declare_parameter('port', 8888)
         self.host = self.get_parameter('host').get_parameter_value().string_value
         self.port = self.get_parameter('port').get_parameter_value().integer_value

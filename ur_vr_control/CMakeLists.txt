@@ -28,6 +28,8 @@ install(PROGRAMS
   scripts/quaternion_utils.py
   scripts/utils.py
   scripts/urvr_moveit_control.py
+  scripts/image_stream_server.py
+  scripts/realsense_stream.py
 DESTINATION lib/${PROJECT_NAME}
 )
 
