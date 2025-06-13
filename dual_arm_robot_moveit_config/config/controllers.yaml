@@ -1,91 +1,45 @@
-controller_manager:
-  ros__parameters:
-    # ตัวควบคุมสำหรับหุ่นยนต์ซ้าย (left_ur)
-    joint_state_broadcaster:
-      type: joint_state_broadcaster/JointStateBroadcaster
-    joint_trajectory_controller:
-      type: joint_trajectory_controller/JointTrajectoryController
-      joints:
-        - left_shoulder_pan_joint
-        - left_shoulder_lift_joint
-        - left_elbow_joint
-        - left_wrist_1_joint
-        - left_wrist_2_joint
-        - left_wrist_3_joint
-      command_interfaces:
-        - position
-      state_interfaces:
-        - position
-        - velocity
-    scaled_joint_trajectory_controller:
-      type: joint_trajectory_controller/JointTrajectoryController
-      joints:
-        - left_shoulder_pan_joint
-        - left_shoulder_lift_joint
-        - left_elbow_joint
-        - left_wrist_1_joint
-        - left_wrist_2_joint
-        - left_wrist_3_joint
-      command_interfaces:
-        - position
-      state_interfaces:
-        - position
-        - velocity
-      scale: 0.9
-    io_and_status_controller:
-      type: ur_controllers/IOAndStatusController
-    speed_scaling_state_broadcaster:
-      type: ur_controllers/SpeedScalingStateBroadcaster
-    force_torque_sensor_broadcaster:
-      type: force_torque_sensor_broadcaster/ForceTorqueSensorBroadcaster
-      frame_id: left_tool0
-    tcp_pose_broadcaster:
-      type: ur_controllers/TCPPoseBroadcaster
-      frame_id: left_tool0
-    ur_configuration_controller:
-      type: ur_controllers/URConfigurationController
+controller_names:
+  - scaled_joint_trajectory_controller
+  - joint_trajectory_controller
 
-    # ตัวควบคุมสำหรับหุ่นยนต์ขวา (right_ur)
-    right_ur_joint_state_broadcaster:
-      type: joint_state_broadcaster/JointStateBroadcaster
-    right_ur_joint_trajectory_controller:
-      type: joint_trajectory_controller/JointTrajectoryController
-      joints:
-        - right_shoulder_pan_joint
-        - right_shoulder_lift_joint
-        - right_elbow_joint
-        - right_wrist_1_joint
-        - right_wrist_2_joint
-        - right_wrist_3_joint
-      command_interfaces:
-        - position
-      state_interfaces:
-        - position
-        - velocity
-    right_ur_scaled_joint_trajectory_controller:
-      type: joint_trajectory_controller/JointTrajectoryController
-      joints:
-        - right_shoulder_pan_joint
-        - right_shoulder_lift_joint
-        - right_elbow_joint
-        - right_wrist_1_joint
-        - right_wrist_2_joint
-        - right_wrist_3_joint
-      command_interfaces:
-        - position
-      state_interfaces:
-        - position
-        - velocity
-      scale: 0.9
-    right_ur_io_and_status_controller:
-      type: ur_controllers/IOAndStatusController
-    right_ur_speed_scaling_state_broadcaster:
-      type: ur_controllers/SpeedScalingStateBroadcaster
-    right_ur_force_torque_sensor_broadcaster:
-      type: force_torque_sensor_broadcaster/ForceTorqueSensorBroadcaster
-      frame_id: right_tool0
-    right_ur_tcp_pose_broadcaster:
-      type: ur_controllers/TCPPoseBroadcaster
-      frame_id: right_tool0
-    right_ur_ur_configuration_controller:
-      type: ur_controllers/URConfigurationController
+
+scaled_joint_trajectory_controller:
+  action_ns: follow_joint_trajectory
+  type: FollowJointTrajectory
+  default: true
+  joints:
+    - left_shoulder_pan_joint
+    - left_shoulder_lift_joint
+    - left_elbow_joint
+    - left_wrist_1_joint
+    - left_wrist_2_joint
+    - left_wrist_3_joint
+
+    - right_shoulder_pan_joint
+    - right_shoulder_lift_joint
+    - right_elbow_joint
+    - right_wrist_1_joint
+    - right_wrist_2_joint
+    - right_wrist_3_joint
+
+
+joint_trajectory_controller:
+  action_ns: follow_joint_trajectory
+  type: FollowJointTrajectory
+  default: false
+  joints:
+    - left_shoulder_pan_joint
+    - left_shoulder_lift_joint
+    - left_elbow_joint
+    - left_wrist_1_joint
+    - left_wrist_2_joint
+    - left_wrist_3_joint
+
+    - right_shoulder_pan_joint
+    - right_shoulder_lift_joint
+    - right_elbow_joint
+    - right_wrist_1_joint
+    - right_wrist_2_joint
+    - right_wrist_3_joint
+
+

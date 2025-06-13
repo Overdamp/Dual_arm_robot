@@ -30,6 +30,7 @@ install(PROGRAMS
   scripts/urvr_moveit_control.py
   scripts/image_stream_server.py
   scripts/realsense_stream.py
+  scripts/dual_joint_state_merger.py
 DESTINATION lib/${PROJECT_NAME}
 )
 

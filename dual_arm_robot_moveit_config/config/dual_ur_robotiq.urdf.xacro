@@ -9,6 +9,6 @@
     <xacro:include filename="dual_ur_robotiq.ros2_control.xacro" />
 
 
-    <xacro:dual_ur_robotiq_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
+    <!-- <xacro:dual_ur_robotiq_ros2_control name="FakeSystem" initial_positions_file="$(arg initial_positions_file)"/> -->
 
 </robot>
