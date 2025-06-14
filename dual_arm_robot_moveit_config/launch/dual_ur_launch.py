@@ -156,7 +156,7 @@ def launch_setup(context, *args, **kwargs):
     }
 
     publish_robot_description_semantic = {
-    "publish_robot_description_semantic": LaunchConfiguration("publish_robot_description_semantic").perform(context)
+    "publish_robot_description_semantic": LaunchConfiguration("publish_robot_description_semantic").perform(context).lower() == "true"
     }
 
     robot_description_kinematics = PathJoinSubstitution(
@@ -239,7 +239,7 @@ def launch_setup(context, *args, **kwargs):
 
     # rviz with moveit configuration
     rviz_config_file = PathJoinSubstitution(
-        [FindPackageShare(moveit_config_package), "rviz", "view_robot.rviz"]
+        [FindPackageShare(moveit_config_package), "config", "moveit.rviz"]
     )
     rviz_node = Node(
         package="rviz2",
@@ -294,7 +294,17 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
     )
 
-    nodes_to_start = [move_group_node, rviz_node, servo_node_left, servo_node_right]
+    robot_state_publisher_node = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        output="screen",
+        parameters=[
+            robot_description,
+            {"use_sim_time": use_sim_time},
+        ],
+    )
+
+    nodes_to_start = [move_group_node, rviz_node, servo_node_left, servo_node_right, robot_state_publisher_node]
     
     return nodes_to_start
 
@@ -363,7 +373,7 @@ def generate_launch_description():
     declared_arguments.append(
         DeclareLaunchArgument(
             "publish_robot_description_semantic",
-            default_value="True",
+            default_value="true",  # ต้องเป็น lowercase "true" หรือ "false"
             description="Whether to publish the SRDF description on topic /robot_description_semantic.",
         )
     )
